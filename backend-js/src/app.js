@@ -18,12 +18,14 @@ app.post('/close_forward', complaintsController.closeForward);
 app.post('/complaint_details', complaintsController.complaintDetails);
 app.get('/sent', complaintsController.sent);
 app.get('/department', complaintsController.department);
+app.get('/report', complaintsController.report);
 
 app.get('/all_users', usersController.allUsers);
 app.post('/login_users', usersController.loginUsers);
 app.post('/register_users', usersController.registerUsers);
 
 app.delete('/drop_user/:empId', usersController.dropUser);
+app.post('/activate_user/:empId', usersController.activateUser);
 // employee id has to be unique check
 app.get('/download', complaintsController.referenceDoc);
 

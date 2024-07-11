@@ -36,9 +36,9 @@ submitButton.addEventListener('click', () => {
     const textarea = document.getElementById('remarks');
     const textValue = textarea.value;
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // Months are zero-indexed
-    const day = now.getDate();
+    // console.log(now)
+    const date = new Date(now).toISOString().split('T')[0];
+    const time = now.toLocaleTimeString('en-GB'); // 'en-GB' format gives HH:MM:SS
     for (const radioButton of radioButtons) {
         if (radioButton.checked) {
             selectedValue = radioButton.value;
@@ -62,11 +62,13 @@ submitButton.addEventListener('click', () => {
             forwardedFrom: sessionStorage.name,
             forwardedTo: selectedText,
             remarks: textValue,
-            date: `${day}/${month}/${year}`
+            date: date,
+            time: time,
+            now: now
         };
         console.log(formData);
     }
-    console.log("Selected complaint type:", selectedValue);
+    // console.log("Selected complaint type:", selectedValue);
     closeForward(formData);
 });
 
@@ -118,11 +120,11 @@ async function closeForward(formData) {
 
         // Handle response data if needed
         const data = responseData.data;
-        document.getElementById('status').innerHTML = `<h2>${data}</h2>`;
+        document.getElementById('successMessage').innerHTML = `<h2>${data}</h2>`;
         setTimeout(() => {
             location.reload();
         }, 3000);
-        
+
     } catch (error) {
         console.error('Error:', error);
         // Handle error response from server if needed
@@ -145,7 +147,8 @@ function displayComplaintDetails(data) {
         referenceDoc: data.reference,
         status: data.status,
         date: data.date,
-        currently_with: data.currently_with
+        currently_with: data.currently_with,
+        status: data.status,
 
 
         // complaintId: data.id,
@@ -174,7 +177,10 @@ function displayComplaintDetails(data) {
     document.getElementById('employee-name').innerText = newData.empName;
     document.getElementById('employee-no').innerText = newData.empNo;
     document.getElementById('currently_with').innerText = newData.currently_with;
-
+    document.getElementById('status').innerText = newData.status;
+    document.getElementById('status').style.color = 'red';
+    document.getElementById('status').style.fontWeight = 'bold';
+    sessionStorage.status = newData.status;
 
 
 
@@ -217,10 +223,11 @@ function displayComplaintDetails(data) {
                 // Handle error
             }
         }
-        disableCloseForward();
+
     } else {
         referenceDocElement.innerText = 'No document available';
     }
+    disableCloseForward();
 }
 
 function displayHistory(innerArray) {
@@ -237,6 +244,7 @@ function displayHistory(innerArray) {
                     <div>To: ${element.fwd_to}</div>
                     <div>Remarks: ${element.remarks}</div>
                     <div>Date: ${element.date}</div>
+                    <div>Time: ${element.time}</div>
                 </div>
             `;
         }
@@ -283,19 +291,146 @@ function populateUserDropdown(users) {
 }
 
 function disableCloseForward() {
-    if (name !== currently_with) {
-        console.log("Not same")
+    if (name !== currently_with || sessionStorage.status === 'Closed') {
+        // console.log("Not same")
         document.getElementById('close-forward').style.display = 'none';
     }
     else {
         return
     }
 }
-// window.onload = () => {
-//     if(!sessionStorage.role) {
-//         location.href = 'LOGIN.html';
-//     }
-//     disableCloseForward();
-// };
+window.onload = () => {
+    if (!sessionStorage.role) {
+        location.href = 'LOGIN.html';
+    }
+    // disableCloseForward();
+};
 
 
+// or should we redirect to the admin html?
+
+document.getElementById('all_complaints').addEventListener("click", (e) => {
+    // Define Role & ID
+    const role = sessionStorage.role;
+    const id = sessionStorage.id;
+    const name = sessionStorage.name;
+
+    if (sessionStorage.role === 'admin') {
+        // Define the request URL
+        const url = `http://127.0.0.1:5000/all_complaints?role=${role}&id=${id}`;
+
+
+        // Send data using Fetch API
+        fetch(url)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then((responseData) => {
+                // Request was successful
+                // console.log(responseData);
+                const main_content = document.querySelector("#main-content");
+                main_content.innerHTML = `
+            <table class="table" id="complaint-table">
+            <tr>
+                <th>COMPLAINT ID</th>
+                <th>DATE</th>
+                <th>EMPLOYEE NO</th>
+                <th>EMPLOYEE NAME</th>
+                <th>DIVISION</th>
+                <th>DEPARTMENT</th>
+                <th>WEBSITE</th>
+                <th>MODULE</th>
+                <th>DESC</th>
+                <th>STATUS</th>
+            </tr>
+            <!-- Table rows can be added here as needed -->
+            </table>`;
+
+                const data = responseData["data"];
+                for (let i = 0; i < data.length; i++) {
+                    const newData = {
+                        complaintId: data[i].id,
+                        empNo: data[i].employee_no,
+                        empName: data[i].employee_name,
+                        division: data[i].division_hq,
+                        department: data[i].department,
+                        website: data[i].website,
+                        module: data[i].module,
+                        desc: data[i].description,
+                        referenceDoc: data[i].referenceDoc,
+                        status: data[i].status,
+                        date: data[i].date,
+                        currently_with: data[i].currently_with,
+                    };
+                    const table = document.querySelector("#complaint-table");
+
+                    // Create a new row and add the data
+                    const newRow = table.insertRow();
+
+                    // Add event listener to navigate to the complaint details of that page
+                    newRow.addEventListener("click", () => {
+                        window.location.href = `COMPLAINT_DETAILS.html?complaint_id=${newData.complaintId}`;
+                    });
+                    newRow.style.cursor = "pointer";
+
+                    newRow.insertCell(0).textContent = newData.complaintId;
+                    newRow.insertCell(1).textContent = newData.date;
+                    newRow.insertCell(2).textContent = newData.empNo;
+                    newRow.insertCell(3).textContent = newData.empName;
+                    newRow.insertCell(4).textContent = newData.division;
+                    newRow.insertCell(5).textContent = newData.department;
+                    newRow.insertCell(6).textContent = newData.website;
+                    newRow.insertCell(7).textContent = newData.module;
+                    newRow.insertCell(8).textContent = newData.desc;
+                    // newRow.insertCell(9).textContent = newData.referenceDoc;
+                    //updated the reference column to a hyperlink
+                    // const linkCell = newRow.insertCell(8);
+                    // const link = document.createElement('a');
+                    // console.log(newData.referenceDoc);
+                    // link.href = newData.referenceDoc;
+                    // link.textContent = 'Click here';
+                    // linkCell.appendChild(link);
+                    newRow.insertCell(9).textContent = newData.status;
+                }
+            }
+            )
+            .catch((error) => {
+                // Request failed
+                console.error("Error:", error);
+            });
+
+        const main_content = document.querySelector("#main-content");
+        main_content.innerHTML = `
+            <table class="table">
+            <tr>
+                <th>COMPLAINT ID</th>
+                <th>COMPLAIN CASE ID</th>
+                <th>DIV</th>
+                <th>DEPARTMENT</th>
+                <th>MAGNITUDE</th>
+                <th>STATUS</th>
+                <th>DATE</th>
+            </tr>
+            <!-- Table rows can be added here as needed -->
+            </table>
+            `;
+    }
+    else {
+        const main_content = document.querySelector("#main-content");
+        main_content.innerHTML = `
+            <h1>Restricted Content!!</h1>
+        `
+    }
+});
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const name = sessionStorage.name;
+    const namedisplay = document.querySelector("#upper-navname");
+    console.log(name);
+    namedisplay.innerHTML = `${name}`
+});
