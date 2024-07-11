@@ -118,7 +118,7 @@ inbox.addEventListener("click", (e) => {
     </table>`;
 });
 
-const logOut = document.querySelector("#logout");
+const logout = document.querySelector("#logout");
 
 logout.addEventListener("click", (e) => {
     sessionStorage.clear();
@@ -126,7 +126,7 @@ logout.addEventListener("click", (e) => {
 });
 window.onload = () => {
     if (!sessionStorage.role) {
-        location.href = "LOGIN.html";
+        location.href = "WELCOME.html";
     }
 };
 
@@ -270,6 +270,7 @@ document.getElementById("activate_deactivate_user").addEventListener("click", (e
                     let dropped = newData.dropped;
                     if (dropped) {
                         const activateButton = document.createElement("button");
+                        activateButton.classList.add("submit-button");
                         activateButton.textContent = "Activate";
                         activateButton.onclick = function () {
                             const empId = data[i].employee_id;
@@ -302,6 +303,7 @@ document.getElementById("activate_deactivate_user").addEventListener("click", (e
                     }
                     else {
                         const dropButton = document.createElement("button");
+                        dropButton.classList.add("submit-button");
                         dropButton.textContent = "Deactivate";
                         dropButton.onclick = function () {
                             const empId = data[i].employee_id;
@@ -731,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const name = sessionStorage.name;
     const namedisplay = document.querySelector("#upper-navname");
     console.log(name);
-    namedisplay.innerHTML = `${name}`
+    namedisplay.innerHTML = `Welcome ${name}`
 
     if (!sessionStorage.role) {
         location.href = "LOGIN.html";
